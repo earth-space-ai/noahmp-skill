@@ -16,15 +16,6 @@ driver.
 > **Skill author:** Koutian Wu (ktwu01@gmail.com)
 > **Skill version:** 0.1.0
 
-> ⚠️ **Disclaimer — please read before using this skill.**
-> This skill is **not a gold-standard reference**. It is a helper that lowers
-> the barrier for new users to **get their hands dirty** with the model. AI
-> agents (and the humans drafting this material) make mistakes; commands, file
-> paths, namelist options, and physics explanations here can be wrong,
-> incomplete, or out of date. **Always cross-check with the official model
-> documentation, the source code, and a human expert before trusting any
-> output for research, publication, or operational use.**
-
 ## What This Is
 
 A self-contained knowledge package that teaches AI agents (and humans) how to
@@ -57,6 +48,12 @@ add a new output variable.
 
 ## Sources and acknowledgment
 
+**Gold-standard references for Noah-MP** (use these to cross-check anything in this skill):
+- Noah-MP v5 tech note: He et al. 2023, doi:10.5065/ew8g-yr95
+- NCAR/noahmp repository: https://github.com/NCAR/noahmp
+- NCAR/hrldas repository: https://github.com/NCAR/hrldas
+- KW-Mod-Tutorials/Noah-MP notebooks (Cenlin He's tutorials): https://github.com/ktwu01/KW-Mod-Tutorials
+
 This skill is borrowed and learned from the Noah-MP tutorial notebooks
 written by **Cenlin He** (NCAR/RAL, Noah-MP maintainer): the single-point,
 2D NLDAS, custom-output, and pull-request notebooks distributed in
@@ -65,26 +62,16 @@ knowledge (`bondville.dat` format, `create_forcing.exe` pipeline,
 `BTRANXY` end-to-end IO chain, the submodule-first push order) is Cenlin's;
 this skill restructures it for agent use.
 
-Additional grounding:
-
-1. **NCAR/noahmp** repository (master branch) and tech note (He et al. 2023, doi:10.5065/ew8g-yr95)
-2. **NCAR/hrldas** repository and its `docs/README.single_point`, `docs/README.NLDAS`
-
-## Acknowledgments
-
-This skill exists only because of the work of other people, and any value it
-has is borrowed from theirs.
+Additional credits:
 
 - **Cenlin He** (NCAR/RAL) and the **NCAR Noah-MP team** for maintaining
   [NCAR/noahmp](https://github.com/NCAR/noahmp), writing the v5 tech note
   (He et al. 2023, doi:10.5065/ew8g-yr95), and curating the refactored Version
   5 codebase that this skill teaches.
 - The **NCAR HRLDAS** maintainers ([NCAR/hrldas](https://github.com/NCAR/hrldas))
-  for the offline driver, the namelist conventions, and the build chain this
-  skill walks new users through.
-- The contributors behind **`KW-Mod-Tutorials/Noah-MP`** notebooks
-  (single-point, 2D NLDAS, custom-output, pull-request) whose procedural
-  knowledge is distilled throughout the `reference/` directory.
+  for the offline driver, the namelist conventions (including
+  `docs/README.single_point` and `docs/README.NLDAS`), and the build chain
+  this skill walks new users through.
 - **Zesen Huang** for [laps-skill](https://github.com/huangzesen/laps-skill)
   and the xhelio family, the progressive-disclosure layout this repo borrows.
 
