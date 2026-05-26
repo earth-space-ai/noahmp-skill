@@ -70,6 +70,27 @@ Additional grounding:
 1. **NCAR/noahmp** repository (master branch) and tech note (He et al. 2023, doi:10.5065/ew8g-yr95)
 2. **NCAR/hrldas** repository and its `docs/README.single_point`, `docs/README.NLDAS`
 
+## Acknowledgments
+
+This skill exists only because of the work of other people, and any value it
+has is borrowed from theirs.
+
+- **Cenlin He** (NCAR/RAL) and the **NCAR Noah-MP team** for maintaining
+  [NCAR/noahmp](https://github.com/NCAR/noahmp), writing the v5 tech note
+  (He et al. 2023, doi:10.5065/ew8g-yr95), and curating the refactored Version
+  5 codebase that this skill teaches.
+- The **NCAR HRLDAS** maintainers ([NCAR/hrldas](https://github.com/NCAR/hrldas))
+  for the offline driver, the namelist conventions, and the build chain this
+  skill walks new users through.
+- The contributors behind **`KW-Mod-Tutorials/Noah-MP`** notebooks
+  (single-point, 2D NLDAS, custom-output, pull-request) whose procedural
+  knowledge is distilled throughout the `reference/` directory.
+- **Zesen Huang** for [laps-skill](https://github.com/huangzesen/laps-skill)
+  and the xhelio family, the progressive-disclosure layout this repo borrows.
+
+Any errors, oversimplifications, or out-of-date claims in this skill are the
+skill author's responsibility, not the upstream community's.
+
 ## Install
 
 This skill follows the same layout as
