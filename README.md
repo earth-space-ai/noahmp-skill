@@ -4,6 +4,14 @@ A progressive-disclosure skill for the [Noah-MP](https://github.com/NCAR/noahmp)
 land surface model and its [HRLDAS](https://github.com/NCAR/hrldas) offline
 driver.
 
+> **Disclaimer:** this skill is a **helper for new users** who want to get
+> their hands dirty with Noah-MP quickly. It is **not** a gold-standard
+> reference and should not be relied on for production decisions, scientific
+> publication, or code correctness claims. The content was assembled with AI
+> assistance and AI can make mistakes (wrong paths, drifted line numbers,
+> stale namelist fields, hallucinated flags). Always cross-check against
+> upstream `NCAR/noahmp` and `NCAR/hrldas` and the tech note before acting.
+
 > **Maintainer of Noah-MP:** Cenlin He (cenlinhe@ucar.edu), NCAR/RAL
 > **Skill author:** Koutian Wu (ktwu01@gmail.com)
 > **Skill version:** 0.1.0
@@ -38,13 +46,20 @@ add a new output variable.
 | `reference/contributing-pr.md` | Fork, branch, submodule push order, pull-request review |
 | `reference/debugging.md` | Compile, runtime, water-balance failure modes |
 
-## Sources
+## Sources and acknowledgment
 
-This skill is grounded in:
+This skill is borrowed and learned from the Noah-MP tutorial notebooks
+written by **Cenlin He** (NCAR/RAL, Noah-MP maintainer): the single-point,
+2D NLDAS, custom-output, and pull-request notebooks distributed in
+`KW-Mod-Tutorials/Noah-MP` (`Note1` through `Note4`). The procedural
+knowledge (`bondville.dat` format, `create_forcing.exe` pipeline,
+`BTRANXY` end-to-end IO chain, the submodule-first push order) is Cenlin's;
+this skill restructures it for agent use.
+
+Additional grounding:
 
 1. **NCAR/noahmp** repository (master branch) and tech note (He et al. 2023, doi:10.5065/ew8g-yr95)
-2. **NCAR/hrldas** repository
-3. **`KW-Mod-Tutorials/Noah-MP`**, single-point, 2D NLDAS, custom-output, and pull-request notebooks
+2. **NCAR/hrldas** repository and its `docs/README.single_point`, `docs/README.NLDAS`
 
 ## Install
 

@@ -22,11 +22,28 @@ tags:
 
 # Noah-MP, Complete Guide
 
+> **Disclaimer:** this skill is a hands-on **helper for new users** who want
+> to get their hands dirty with Noah-MP quickly. It is **not** a gold-standard
+> reference and **should not be relied on for production decisions, scientific
+> publication, or code correctness claims**. The content was assembled with
+> AI assistance and AI can make mistakes (wrong file paths, drifted line
+> numbers, stale namelist fields, hallucinated flags). Always cross-check
+> against the upstream `NCAR/noahmp` and `NCAR/hrldas` repositories and the
+> tech note before acting on anything you read here.
+
 > **Noah-MP** = Noah Multi-Parameterization land surface model
 > Maintainer: Cenlin He (cenlinhe@ucar.edu), NCAR/RAL
 > Source: https://github.com/NCAR/noahmp and https://github.com/NCAR/hrldas
 > Tech note: He et al. 2023, doi:10.5065/ew8g-yr95
 > Model paper: He et al. 2023, GMD 16:5131-5151, doi:10.5194/gmd-16-5131-2023
+>
+> **Acknowledgment:** the procedural content in this skill is borrowed and
+> learned from the Noah-MP tutorial notebooks written by Cenlin He
+> (`Note1_Single_Point_Bondville-site`, `Note2_2D_NLDAS2_domain`,
+> `Note3_Output_Additional_Variables`, `Note4_Code_Development_GitHub_Pull_Request`),
+> distributed at https://github.com/NCAR/hrldas/tree/master/hrldas/docs and in
+> the `KW-Mod-Tutorials/Noah-MP` notebook set. This skill restructures that
+> material for agent use; the underlying instruction is Cenlin's.
 
 **What Noah-MP does:** Solves coupled land-surface energy, water, and carbon
 budgets at a column (single point) or over a grid (2D domain). Provides

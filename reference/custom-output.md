@@ -12,7 +12,7 @@ This guide covers two examples:
 2. **`ThicknessCanBury`**, a *local* variable in `PhenologyMainMod.F90` that
    must first be promoted to the derived type before it can be output.
 
-Tutorial source:
+Tutorial source (borrowed and learned from Cenlin He's Noah-MP tutorial):
 `KW-Mod-Tutorials/Noah-MP/Note3_Output_Additional_Variables.ipynb`
 
 ---
