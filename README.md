@@ -1,0 +1,68 @@
+# Noah-MP Skill
+
+A progressive-disclosure skill for the [Noah-MP](https://github.com/NCAR/noahmp)
+land surface model and its [HRLDAS](https://github.com/NCAR/hrldas) offline
+driver.
+
+> **Maintainer of Noah-MP:** Cenlin He (cenlinhe@ucar.edu), NCAR/RAL
+> **Skill author:** Koutian Wu (ktwu01@gmail.com)
+> **Skill version:** 0.1.0
+
+## What This Is
+
+A self-contained knowledge package that teaches AI agents (and humans) how to
+**install, compile, run, modify, debug, and contribute to** Noah-MP, covering
+the standard refactored Version 5 codebase and the HRLDAS offline driver.
+
+The skill captures the **procedural knowledge** that is normally only
+transmitted by working alongside an experienced Noah-MP developer: the order
+in which to push a coupled hrldas+noahmp commit, why you should never run
+`hrldas.exe` inside the source tree, and the file-by-file chain required to
+add a new output variable.
+
+**Progressive disclosure:**
+- `SKILL.md`, routing hub: decision tree, repo layout, quick start, critical rules
+- `reference/*.md`, deep-dive docs loaded on demand
+
+## Contents
+
+| Document | What's inside |
+|----------|---------------|
+| `SKILL.md` | Entry point, decision tree, repo layout, quick start, critical rules |
+| `reference/designing-a-run.md` | Turn an underspecified user request into a scoped, runnable plan: the seven offline-run parameters, defaults vs. ask, domain sizing, spin-up, resolution-vs-forcing honesty check, plan-doc template |
+| `reference/getting-started.md` | Repo structure, submodule clone, libraries, configure, compile, what success looks like |
+| `reference/architecture.md` | v5 modular layout, derived types, `kind_noahmp`, module families |
+| `reference/running-single-point.md` | Single-site simulation: forcing, namelist, executing, viewing output |
+| `reference/running-2d-domain.md` | CONUS NLDAS-2 simulation: pre-processing, `create_forcing.exe`, parallel run |
+| `reference/custom-output.md` | Adding a new output variable end-to-end (BTRANXY example, v4.5 vs v5) |
+| `reference/contributing-pr.md` | Fork, branch, submodule push order, pull-request review |
+| `reference/debugging.md` | Compile, runtime, water-balance failure modes |
+
+## Sources
+
+This skill is grounded in:
+
+1. **NCAR/noahmp** repository (master branch) and tech note (He et al. 2023, doi:10.5065/ew8g-yr95)
+2. **NCAR/hrldas** repository
+3. **`KW-Mod-Tutorials/Noah-MP`**, single-point, 2D NLDAS, custom-output, and pull-request notebooks
+
+## Install
+
+This skill follows the same layout as
+[laps-skill](https://github.com/huangzesen/laps-skill) and the xhelio family
+(`xhelio-cdaweb`, `xhelio-spice`, `xhelio-pds`):
+
+```
+noahmp-skill/
+├── SKILL.md              ← routing hub (read first)
+├── README.md             ← this file
+└── reference/            ← deep-dive docs
+```
+
+To use with a Claude Code or LingTai agent, drop the directory into your
+skills library and refresh.
+
+## License
+
+MIT. Noah-MP itself is governed by the NCAR/noahmp license, see
+https://github.com/NCAR/noahmp/blob/develop/LICENSE.txt.
