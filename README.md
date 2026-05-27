@@ -1,5 +1,26 @@
 # Noah-MP Skill
 
+> **⚠ Don't read this skill as a human.** It is written for AI coding agents
+> (Claude Code, Codex, Cursor, Aider, Cline, or any agent that can read files
+> and run shell). Open it through an agent and let the agent drive — paths,
+> module loads, configure keystrokes, build-failure remediation, and the
+> dependency test are all designed to be executed by the agent, not typed by
+> you. The doc-map and phase blocks are machine-checkable, not tutorial prose.
+>
+> **Starting prompt — paste into your agent of choice:**
+>
+> ```
+> Read SKILL.md in this repo, then drive the Noah-MP / HRLDAS workflow that
+> matches my request below. Treat the skill as authoritative: follow its
+> doc-map to load the right reference/*.md, honor the USER GATE markers
+> (ask me only at those points), and use examples/test_tacc_deps.sh and the
+> AI-native playbook in reference/setup-tacc.md when the target is TACC ls6.
+>
+> My request: <one sentence — e.g. "set up Noah-MP on TACC ls6 from a fresh
+> login through a built hrldas.exe", or "plan a Texas 12.5 km NLDAS-2 run",
+> or "add BTRANXY to LDASOUT">.
+> ```
+
 A progressive-disclosure skill for the [Noah-MP](https://github.com/NCAR/noahmp)
 land surface model and its [HRLDAS](https://github.com/NCAR/hrldas) offline
 driver.
@@ -18,9 +39,10 @@ driver.
 
 ## What This Is
 
-A self-contained knowledge package that teaches AI agents (and humans) how to
+A self-contained knowledge package that teaches AI coding agents how to
 **install, compile, run, modify, debug, and contribute to** Noah-MP, covering
 the standard refactored Version 5 codebase and the HRLDAS offline driver.
+Humans read the disclaimer and the agent's output — the agent reads the rest.
 
 The skill captures the **procedural knowledge** that is normally only
 transmitted by working alongside an experienced Noah-MP developer: the order
