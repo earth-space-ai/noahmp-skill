@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 # test_tacc_deps.sh — verify Noah-MP / HRLDAS build dependencies on TACC Lonestar6.
 #
+# Usage
+#   bash test_tacc_deps.sh            # just probe deps (no clone)
+#   bash test_tacc_deps.sh --clone    # probe deps; if all PASS, also clone hrldas into $WORK
+#
 # What it does
 #   Six probes, each prints [PASS] / [WARN] / [FAIL] with a one-line hint.
 #     1. Host check          — confirm ls6.tacc.utexas.edu
@@ -10,19 +14,37 @@
 #     5. Fortran/C dep tests — download the NCAR WRF tarball; build and run TEST_1..4 + csh/perl/sh
 #     6. Summary             — print recommended ./configure option and a ready-to-paste
 #                              user_build_options stanza
+#   Then, only with --clone and only if all probes pass:
+#     7. Clone source        — git clone --recurse-submodules https://github.com/NCAR/hrldas
+#                              into $WORK (skipped if $WORK/hrldas already exists)
 #
-# Exit 0 only if all six probes pass. The script does not run `module load`;
-# it reports what is missing and lets the user load modules themselves.
+# Exit 0 only if all six probes pass (and the clone, if requested, succeeded).
+# The script does not run `module load`; it reports what is missing and lets
+# the user load modules themselves.
 #
 # Side effects: creates ~/test_noahmp_deps/ and downloads ~150 KB into it.
+# With --clone: also creates $WORK/hrldas (~250 MB after submodule init).
 #
 # Source: distilled from KW-PHS-Note0_Download_Compile.ipynb (cells 14, 16, 36, 51, 55).
 # Companion playbook: reference/setup-tacc.md
 
 set -u
 
+DO_CLONE=0
+for arg in "$@"; do
+  case "$arg" in
+    --clone) DO_CLONE=1 ;;
+    -h|--help)
+      sed -n '2,30p' "$0" | sed 's/^# \{0,1\}//'
+      exit 0
+      ;;
+    *) echo "unknown option: $arg" >&2; exit 2 ;;
+  esac
+done
+
 WORKDIR="${HOME}/test_noahmp_deps"
 FORTRAN_C_URL="https://www2.mmm.ucar.edu/wrf/OnLineTutorial/compile_tutorial/tar_files/Fortran_C_tests.tar"
+HRLDAS_URL="https://github.com/NCAR/hrldas"
 
 # ---- output helpers ---------------------------------------------------------
 RED=$'\033[0;31m'; YEL=$'\033[0;33m'; GRN=$'\033[0;32m'; BLD=$'\033[1m'; OFF=$'\033[0m'
@@ -256,7 +278,43 @@ if (( FAILED == 0 )); then
   echo "  Reference TACC build options (canonical, ifort serial):"
   echo "    https://github.com/ktwu01/Ori_RPM/blob/main/hrldas_phs/hrldas/user_build_options_TACC"
   echo
-  echo "  Next: open reference/setup-tacc.md and continue from Phase 2 (clone the repo)."
+
+  # ---- 7. Optional clone (only with --clone) --------------------------------
+  if (( DO_CLONE == 1 )); then
+    hdr "7. Clone NCAR/hrldas into \$WORK"
+    if [[ -z "${WORK:-}" ]]; then
+      fail "\$WORK is unset — are you on a TACC node? Set \$WORK to where you want the source, then re-run with --clone."
+      exit 1
+    elif [[ ! -d "$WORK" ]]; then
+      fail "\$WORK ($WORK) does not exist."
+      exit 1
+    elif [[ -d "$WORK/hrldas/.git" ]]; then
+      pass "$WORK/hrldas already exists — skipping clone."
+      note "to refresh submodules anyway: cd $WORK/hrldas && git submodule update --init --recursive"
+    else
+      note "running: git clone --recurse-submodules $HRLDAS_URL  (into $WORK)"
+      if ! command -v git >/dev/null 2>&1; then
+        fail "git not in PATH (try: module load git)"
+        exit 1
+      fi
+      if ( cd "$WORK" && git clone --recurse-submodules "$HRLDAS_URL" ); then
+        if [[ -f "$WORK/hrldas/noahmp/src/NoahmpMainMod.F90" ]]; then
+          pass "clone complete; noahmp submodule populated"
+        else
+          warn "clone finished but noahmp/src/NoahmpMainMod.F90 missing — running submodule update"
+          ( cd "$WORK/hrldas" && git submodule update --init --recursive )
+        fi
+      else
+        fail "git clone failed (network on a compute node? check from a login node)"
+        exit 1
+      fi
+    fi
+    echo
+    echo "  Next: cd \$WORK/hrldas/hrldas && ./configure  (open reference/setup-tacc.md at Phase 4)."
+  else
+    echo "  Next: open reference/setup-tacc.md and continue from Phase 2 (clone the repo),"
+    echo "        or re-run this script with --clone to clone NCAR/hrldas into \$WORK now."
+  fi
   exit 0
 else
   echo

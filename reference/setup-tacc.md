@@ -67,12 +67,19 @@ up — fix before continuing."
 ```bash
 cd ~                                                       # script's tarball lives in ~/test_noahmp_deps/
 bash /path/to/noahmp-skill-public/examples/test_tacc_deps.sh
+# or, to clone NCAR/hrldas into $WORK in the same pass (only if all probes pass):
+bash /path/to/noahmp-skill-public/examples/test_tacc_deps.sh --clone
 ```
 
 The script runs six probes (host, compilers, netCDF, Jasper, NCAR Fortran/C
 tarball, summary) and exits non-zero if any fail. Its summary block prints the
 recommended `./configure` choice and a ready-to-paste `user_build_options`
 stanza with real ls6 paths.
+
+With `--clone`, a seventh phase runs only if all probes passed: it does
+`git clone --recurse-submodules https://github.com/NCAR/hrldas` into `$WORK`
+(skipped if `$WORK/hrldas` already exists). If the user opts in here, they
+can jump straight to Phase 4 below.
 
 If anything fails:
 
@@ -99,7 +106,8 @@ Capture from the script output:
 
 ## Phase 2 — Clone the source
 
-Clone into `$WORK`, not `$HOME`.
+Skip this phase if the user already ran `test_tacc_deps.sh --clone` in
+Phase 1; otherwise clone into `$WORK`, not `$HOME`.
 
 ```bash
 cd "$WORK"
