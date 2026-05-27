@@ -1,260 +1,270 @@
-# Interactive setup on TACC Lonestar6
+# AI-native setup on TACC Lonestar6
 
-Take a user from a fresh ls6 login to a working `hrldas.exe`. Runs as a
-**Claude-driven playbook**: each phase ends with a "**STOP — ask user**"
-checkpoint so failures cannot sleepwalk past. End state is a built executable;
-running the model is covered by `running-single-point.md` and `running-2d-domain.md`.
+Claude takes a user from a fresh ls6 login to a working `hrldas.exe`.
+**Claude does the work**: opens an SSH session to ls6, runs each phase via
+`Bash`, parses output, decides the next step, and only asks the user at
+irreversible decision points (credentials, allocation, configure choice,
+final ship). End state is a built executable; running the model is covered
+by `running-single-point.md` and `running-2d-domain.md`.
 
-For why ls6 specifically: the source recipe was distilled from terminal
-transcripts on ls6 (KW-Mod-Tutorials, `KW-PHS-Note0_Download_Compile.ipynb`).
-Stampede3 / Frontera variants are out of scope here; most of the script is
-portable but the netCDF path heuristics are ls6-tuned.
-
----
-
-## How Claude should drive this
-
-For each phase below:
-
-1. Read the phase block. Run the listed commands one at a time (the user may
-   need to read each output before the next runs).
-2. Paste the user-visible output of decision-point commands back into the
-   conversation so the user can confirm.
-3. At the "**STOP — ask user**" line, do **not** continue until the user
-   says go. If the check fails, follow the remediation hint, then re-run the
-   check before advancing.
-4. Never auto-`module load` on the user's behalf. Print the suggested module
-   commands and let them run them — modules change the environment for the
-   rest of their session.
-5. The script in Phase 1 already encodes most "is this correct" logic. Trust
-   its PASS/FAIL output; don't re-derive.
+Source: distilled from KW-Mod-Tutorials `KW-PHS-Note0_Download_Compile.ipynb`
+(ls6 terminal transcripts). Stampede3 / Frontera variants are out of scope.
 
 ---
 
-## Phase 0 — Pre-flight
+## How Claude executes this
 
-Confirm the user is where they think they are.
+This is not a checklist for the human to read. It is a script for Claude
+to run. Concretely:
+
+1. **Open one persistent SSH session.** Use `Bash` with `run_in_background:
+   true` for `ssh -o ControlMaster=auto -o ControlPath=~/.ssh/cm-%r@%h:%p
+   -o ControlPersist=10m <user>@ls6.tacc.utexas.edu`. All subsequent phase
+   commands reuse the multiplex socket — same shell environment carries
+   over, so `module load` in Phase 1 stays loaded in Phase 5.
+2. **Run each phase's `command_block` end-to-end** via that SSH session.
+   Capture stdout+stderr.
+3. **Apply the phase's `success_check`** to the captured output. On
+   success, advance silently. On failure, run the matching remediation
+   from `failure_modes`, then re-run the phase. Cap remediations at 3
+   attempts before surfacing to the user.
+4. **Ask the user only at points marked `USER GATE`**. Those are the
+   irreversible or judgment calls: SSH credentials, allocation/budget
+   confirmation, the `./configure` keystroke, and the final "build looks
+   right?" sign-off.
+5. **`module load` is Claude's job here**, not the user's. The Bash
+   environment is Claude's SSH session, not the user's shell — loading a
+   module only affects this session and persists until the ControlPersist
+   timeout. This is the inversion from the human-driven version: the
+   reason the old guide said "don't auto-load" was to protect the user's
+   shell, which Claude isn't touching.
+6. **Trust the dep-test script.** Don't re-derive what its PASS/FAIL
+   verdicts already encode.
+
+---
+
+## Phase 0 — Pre-flight (USER GATE)
+
+**Inputs Claude needs from the user before opening the session:**
+
+- ls6 username (or confirmation that `~/.ssh/config` has an `ls6` Host entry)
+- Project allocation Claude should bill against (or confirmation that the
+  default in `~/.tacc_profile` is correct)
+
+Ask both in one `AskUserQuestion` round, then proceed.
+
+**Commands Claude runs after the gate:**
 
 ```bash
-hostname -f                                    # expect *.ls6.tacc.utexas.edu
-echo "$WORK"   ; ls "$WORK"   2>/dev/null      # expect /work/<id>/<user>/ls6, populated
-echo "$SCRATCH"; ls "$SCRATCH" 2>/dev/null     # expect /scratch/<id>/<user>, populated
-test -f /usr/local/etc/taccinfo && cat /usr/local/etc/taccinfo  # project allocation summary
+hostname -f
+echo "WORK=$WORK"     && ls "$WORK"     2>/dev/null | head
+echo "SCRATCH=$SCRATCH" && ls "$SCRATCH" 2>/dev/null | head
+test -f /usr/local/etc/taccinfo && cat /usr/local/etc/taccinfo
 ```
 
-Why each line matters:
+**`success_check`:**
+- `hostname -f` matches `*.ls6.tacc.utexas.edu`
+- `$WORK` is non-empty and the directory exists
+- `taccinfo` shows non-zero balance on at least one project
 
-- **Host:** the rest of this guide assumes ls6 module names and `/opt/apps`
-  paths. If they're on a compute node already (`c???-???`), pull them back to
-  a login node for the dep test and build — compute nodes have no outbound
-  network, so `wget` and `git clone` will hang.
-- **`$WORK`:** clone the source here. `$HOME` on ls6 has a small quota and
-  rejecting a recurse-submodule clone halfway through is a bad first
-  experience.
-- **`$SCRATCH`:** run outputs go here. Not used until later (running-the-model
-  docs), but worth confirming the user has one and knows the purge policy.
-- **`taccinfo`:** shows allocation balance. Cheap to check; expensive to
-  discover at sbatch time.
+**`failure_modes`:**
 
-**STOP — ask user:** "Is `$WORK` populated and is your project allocation
-non-zero? If not, you're on the wrong machine or your account isn't set
-up — fix before continuing."
-
----
-
-## Phase 1 — Run the dependency test
-
-```bash
-cd ~                                                       # script's tarball lives in ~/test_noahmp_deps/
-bash /path/to/noahmp-skill-public/examples/test_tacc_deps.sh
-# or, to clone NCAR/hrldas into $WORK in the same pass (only if all probes pass):
-bash /path/to/noahmp-skill-public/examples/test_tacc_deps.sh --clone
-```
-
-The script runs six probes (host, compilers, netCDF, Jasper, NCAR Fortran/C
-tarball, summary) and exits non-zero if any fail. Its summary block prints the
-recommended `./configure` choice and a ready-to-paste `user_build_options`
-stanza with real ls6 paths.
-
-With `--clone`, a seventh phase runs only if all probes passed: it does
-`git clone --recurse-submodules https://github.com/NCAR/hrldas` into `$WORK`
-(skipped if `$WORK/hrldas` already exists). If the user opts in here, they
-can jump straight to Phase 4 below.
-
-If anything fails:
-
-| Symptom | Remediation |
+| Symptom | Claude does |
 |---------|-------------|
+| `hostname` doesn't match ls6 | Surface to user: wrong host, confirm SSH target |
+| Compute node (`c???-???`) | `exit` the SSH session; reconnect — the rest of the playbook needs outbound network |
+| `$WORK` unset | `source /etc/profile && source ~/.bashrc`; if still unset, surface to user (broken account) |
+| Zero allocation | Surface to user: cannot proceed without an allocation |
+
+---
+
+## Phase 1 — Dependency test
+
+**Pre-step:** Claude uploads `examples/test_tacc_deps.sh` to `~/test_tacc_deps.sh`
+on ls6 (`scp` over the same multiplex socket, or `cat | ssh ... 'cat >
+~/test_tacc_deps.sh'`).
+
+**Command Claude runs:**
+
+```bash
+chmod +x ~/test_tacc_deps.sh
+bash ~/test_tacc_deps.sh --clone
+echo "__EXIT__=$?"
+```
+
+**`success_check`:**
+- `__EXIT__=0`
+- Output contains `Recommended ./configure choice on ls6: 3`
+- Output contains a `NETCDFMOD = -I...` line
+- Output contains either `clone complete; noahmp submodule populated` or
+  `$WORK/hrldas already exists`
+
+**Claude captures, in variables for later phases:**
+- `RECOMMENDED_CONFIGURE_OPT` — the integer after "Recommended ./configure choice on ls6:"
+- `USER_BUILD_OPTIONS_STANZA` — the four lines (NETCDFMOD, NETCDFLIB, LIBJASPER, INCJASPER) from the summary block
+- `HRLDAS_DIR` — `$WORK/hrldas` (from the clone confirmation)
+
+**`failure_modes`** (Claude applies the first match, then re-runs Phase 1):
+
+| `[FAIL]` line | Claude runs |
+|---------------|-------------|
 | `ifort not in PATH` | `module load intel` |
-| `gfortran/gcc not in PATH` | `module load gcc` |
+| `gfortran not in PATH` or `gcc not in PATH` | `module load gcc` |
 | `no netcdf.inc under /opt/apps` | `module load netcdf` |
-| `libjasper missing` | `module load jasper` (only required if building `create_forcing.exe`) |
-| TEST_4 link failed | Compiler ABI mismatch — `module purge` and reload `intel` + `netcdf` from a clean state |
-| Download failed | The user is probably on a compute node. Move to a login node. |
+| `no libjasper` (and the build will need create_forcing.exe) | `module load jasper` |
+| `TEST_4: link failed (Fortran↔C ABI mismatch)` | `module purge && module load intel netcdf` |
+| `download failed` | `module load wget` if missing, else surface (likely compute-node misroute) |
+| `$WORK is unset` in Phase 7 of the script | Already handled in Phase 0; should not reach here |
 
-Re-run the script after each remediation until it exits 0.
-
-**STOP — ask user:** "Did the script exit 0 and print a recommended
-`./configure` option? Paste the summary block — I'll keep it for Phase 4."
-
-Capture from the script output:
-
-- The recommended `./configure` choice (should be **3 — ifort serial** on ls6).
-- The `NETCDFMOD` / `NETCDFLIB` / `LIBJASPER` / `INCJASPER` stanza.
+If three remediation cycles do not yield exit 0, **surface to user** with
+the full script output and ask whether to continue manually.
 
 ---
 
-## Phase 2 — Clone the source
+## Phase 2 — Verify clone (no USER GATE)
 
-Skip this phase if the user already ran `test_tacc_deps.sh --clone` in
-Phase 1; otherwise clone into `$WORK`, not `$HOME`.
-
-```bash
-cd "$WORK"
-git clone --recurse-submodules https://github.com/NCAR/hrldas
-cd hrldas
-ls noahmp/src | head                              # expect ~136 *.F90 files including NoahmpMainMod.F90
-```
-
-If the user forgot `--recurse-submodules` (the empty `noahmp/` symptom from
-`reference/getting-started.md`):
+The `--clone` in Phase 1 already cloned the repo. Claude verifies:
 
 ```bash
-git submodule update --init --recursive
+ls "$HRLDAS_DIR/noahmp/src/NoahmpMainMod.F90"
+ls "$HRLDAS_DIR/hrldas" | head
 ```
 
-**STOP — ask user:** "Is `noahmp/src/NoahmpMainMod.F90` present? If yes,
-we're ready to configure. If no, run the submodule update above."
+**`success_check`:** `NoahmpMainMod.F90` exists; `hrldas/` subdir contains `configure`.
+
+**`failure_modes`:** if the .F90 is missing, run
+`cd "$HRLDAS_DIR" && git submodule update --init --recursive`, then re-check.
 
 ---
 
-## Phase 3 — Stage the build options
+## Phase 3 — Stage build options (no USER GATE)
 
-Two layers, in this order:
+Claude fetches the canonical reference once for diffing:
 
-1. Run `./configure` first (Phase 4) — it writes a `user_build_options` file
-   from a template.
-2. Then merge in the ls6-specific stanza from Phase 1.
+```bash
+curl -sLo /tmp/user_build_options_TACC.ref \
+  https://raw.githubusercontent.com/ktwu01/Ori_RPM/main/hrldas_phs/hrldas/user_build_options_TACC
+head -40 /tmp/user_build_options_TACC.ref
+```
 
-For reference, the canonical ls6 build options from the source transcript
-(KW-PHS-Note0 cell 36) live at:
+The reference is for sanity-checking only — the Phase 1 stanza takes
+precedence because it reflects the current `/opt/apps` state.
 
-> https://github.com/ktwu01/Ori_RPM/blob/main/hrldas_phs/hrldas/user_build_options_TACC
-
-Treat this as a known-working **reference**, not a drop-in replacement —
-library versions on ls6 may have moved since it was captured. The dep-test
-script's summary takes precedence for `NETCDFMOD/LIB` and `LIBJASPER/INCJASPER`
-because it reads the current filesystem.
-
-**STOP — ask user:** "Want to fetch the reference file for side-by-side
-diff with what `./configure` will write? (Optional — most users just paste
-the script summary.)"
+If `curl` fails (network blocked from this node, repo moved), Claude
+proceeds without the reference and notes it in the final summary.
 
 ---
 
-## Phase 4 — Configure
+## Phase 4 — Configure (USER GATE on keystroke)
+
+`./configure` is interactive. Claude drives it but pauses for one final
+confirmation before sending the digit.
 
 ```bash
-cd "$WORK/hrldas/hrldas"
-./configure
+cd "$HRLDAS_DIR/hrldas"
+./configure <<EOF_INPUT
+__USER_CONFIRMED_OPT__
+EOF_INPUT
 ```
 
-The interactive prompt looks like (from KW-PHS-Note0 cell 14):
+**USER GATE:** Before submitting, Claude asks:
 
-```
-Please select from following supported architectures:
+> "Phase 1 recommended `./configure` option **3** (Linux ifort compiler
+> serial) based on the ls6 dep test. The other options on this host are
+> either unavailable (PGI) or unusual for this workflow. Confirm 3, or
+> override?"
 
-   1. Linux PGI compiler serial
-   2. Linux PGI compiler MPI
-   3. Linux ifort compiler serial      ← ls6: pick this
-   4. Linux ifort compiler MPI
-   5. Linux gfortran compiler serial
-   6. Linux ifort compiler MPI for compy
-   0. exit only
+Then substitutes the confirmed integer for `__USER_CONFIRMED_OPT__`.
 
-Enter selection [1-5] :
-```
+After `./configure` returns, Claude patches `user_build_options` with
+`USER_BUILD_OPTIONS_STANZA` from Phase 1:
 
-On ls6, options 1–2 are unusable (`pgfortran` is absent — confirmed by the
-dep test). Option 3 (ifort serial) matches what the Phase 1 script
-recommended and what the upstream TACC `user_build_options_TACC` file targets.
-
-**STOP — ask user:** "I'm about to send `3` to `./configure`. Confirm?"
-
-After it returns, edit `user_build_options` and replace the four library
-lines with the stanza from Phase 1:
-
-```makefile
-NETCDFMOD   = -I/opt/apps/intel19/netcdf/4.6.2/x86_64/include
-NETCDFLIB   = -L/opt/apps/intel19/netcdf/4.6.2/x86_64/lib -lnetcdff -lnetcdf
-LIBJASPER   = -L<from script>/lib -ljasper
-INCJASPER   = -I<from script>/include
+```bash
+cd "$HRLDAS_DIR/hrldas"
+# Claude generates this sed/awk block from USER_BUILD_OPTIONS_STANZA,
+# replacing each of NETCDFMOD / NETCDFLIB / LIBJASPER / INCJASPER in place.
+python3 - <<'PY'
+import re, os, pathlib
+p = pathlib.Path("user_build_options")
+text = p.read_text()
+for line in os.environ["USER_BUILD_OPTIONS_STANZA"].splitlines():
+    if "=" not in line: continue
+    key = line.split("=", 1)[0].strip()
+    text = re.sub(rf"(?m)^{re.escape(key)}\s*=.*$", line.strip(), text)
+p.write_text(text)
+PY
+grep -E '^(NETCDFMOD|NETCDFLIB|LIBJASPER|INCJASPER)' user_build_options
 ```
 
-If the user plans to debug a build problem rather than run for real, add
-ifort debug flags (`-O0 -g -check all -traceback -fpe0`) to `F90FLAGS` — see
-`getting-started.md` Step 5. Strip them again before production.
+**`success_check`:** all four lines `grep`'d back match the Phase 1 stanza.
 
-**STOP — ask user:** "`user_build_options` now points at the ls6 netCDF
-and Jasper paths from the dep test. Ready to build?"
+**`failure_modes`:** if any line is missing from `user_build_options` (the
+configure template structure changed), Claude appends the stanza at the
+end of the file with a header comment.
 
 ---
 
-## Phase 5 — Build
+## Phase 5 — Build (no USER GATE)
 
 ```bash
+cd "$HRLDAS_DIR/hrldas"
 make clean
 make >& compile.log
-```
-
-Watch for the exit:
-
-```bash
-echo "make exit: $?"                                       # expect 0
+echo "__MAKE_EXIT__=$?"
+ls -la run/hrldas.exe 2>/dev/null
 grep -in -E 'error|cannot|undefined reference' compile.log | head -20
-ls -la run/hrldas.exe                                      # the artifact
 ```
 
-Expected build time on an ls6 login node: 1–3 minutes. If it's much slower,
-the user may have wandered onto a contended login node — let them retry on
-another login (login1/login2).
+**`success_check`:** `__MAKE_EXIT__=0` and `run/hrldas.exe` exists with
+nonzero size.
 
-If `make` exit ≠ 0:
+**`failure_modes`:**
 
-| Pattern in `compile.log` | Likely cause | Fix |
-|--------------------------|--------------|-----|
-| `cannot find -lnetcdff` | netCDF Fortran binding path wrong in `user_build_options` | Re-paste the Phase 1 stanza |
-| `Symbol not found: __netcdf_MOD_*` | netCDF built with a different compiler than ifort | The "broken" entries in the script's netCDF probe — switch to the `intel19/netcdf` build |
-| `catastrophic error: Too many errors, exiting` | Same as above (gcc-built netCDF + ifort source) | Same fix |
-| `cannot find -ljasper` | Jasper module not loaded | `module load jasper`, regrab `LIBJASPER` from re-running the dep test |
-| Build silently completes but `hrldas.exe` missing | First error in submodule build was suppressed | `make clean && make >& compile.log`, search log for the first `Error` |
+| `grep` pattern from `compile.log` | Claude runs |
+|-----------------------------------|-------------|
+| `cannot find -lnetcdff` | Re-extract netCDF stanza from Phase 1, re-patch `user_build_options`, `make clean && make >& compile.log` |
+| `Symbol not found: __netcdf_MOD_*` or `catastrophic error: Too many errors` | The loaded netCDF was compiled with a different toolchain. `module purge && module load intel netcdf`, re-run Phase 1 to refresh `NETCDF_GOOD`, then Phase 5 |
+| `cannot find -ljasper` | `module load jasper`, re-run Phase 1, re-patch, rebuild |
+| Exit 0 but `hrldas.exe` missing | An earlier silent failure in a sub-make. Surface to user with the first non-warning line of `compile.log` |
 
-Re-run from `make clean` after each fix — partial-rebuilds with stale `.mod`
-files lie to you.
-
-**STOP — ask user:** "Does `ls run/hrldas.exe` show the executable? Size
-should be ~20–80 MB depending on debug flags."
+Three failed attempts → surface with full `compile.log` (or a `tail -100`).
 
 ---
 
-## Phase 6 — Handoff
+## Phase 6 — Final sign-off (USER GATE)
 
-You're done with setup. From here:
+Claude prints:
 
-- **Smoke test the executable** (Step 7 of `getting-started.md`): `cd run &&
-  ./hrldas.exe` should at least print a banner; it will error on missing
-  forcing unless `INDIR`/`OUTDIR` are set, which is the next document's
-  job.
-- **One site, one year:** `reference/running-single-point.md`.
-- **A real domain (e.g. Texas at 12.5 km):** `reference/running-2d-domain.md`,
-  then `reference/designing-a-run.md` for the planning checklist, then
-  `examples/PLAN_Texas_12p5km_NLDAS2_TACC.md` for a worked example on this
-  exact cluster.
-- **Before any run that's not a quick `./hrldas.exe` print-banner check:**
-  drop to a compute node. `idev -p development -t 02:00:00` is the
-  interactive option; sbatch templates are documented in the TACC user
-  guide. Login nodes are CPU-throttled and your real run will be slow and
-  visible to TACC admins.
+- `ls -la "$HRLDAS_DIR/hrldas/run/hrldas.exe"` (size, mtime)
+- Loaded modules (`module list`)
+- Path to `user_build_options` and a diff against the canonical reference
+- Where outputs will land (`$SCRATCH` reminder)
 
-**STOP — ask user:** "Where do you want to go next: smoke test the
-executable, single-point run, or jump to the Texas 2D plan?"
+Then asks:
+
+> "Build complete. Next step: smoke test the executable, set up a single-point
+> run, or jump to the Texas 12.5 km plan?"
+
+The next-step options route to:
+- `reference/running-single-point.md`
+- `reference/designing-a-run.md` → `reference/running-2d-domain.md` →
+  `examples/PLAN_Texas_12p5km_NLDAS2_TACC.md` (planning checklist, then
+  execution, then a worked example on this exact cluster)
+- `reference/getting-started.md` Step 7 for the bare banner check
+
+Remind once: any non-trivial run requires `idev -p development -t 02:00:00`
+or sbatch — not the login node Claude is on.
+
+---
+
+## What's NOT Claude's job
+
+- **Editing the user's `~/.bashrc`.** Modules loaded in Claude's SSH session
+  evaporate when the ControlPersist expires. That is correct — the user's
+  shell stays clean.
+- **Picking the allocation.** Phase 0 asks; Claude doesn't infer.
+- **Submitting sbatch jobs.** Out of scope here; lives in
+  `running-2d-domain.md`.
+- **Long-running builds in the background.** A 1–3 minute `make` is
+  foreground. If the SSH session drops mid-build, Phase 5 re-runs from
+  `make clean` cleanly.

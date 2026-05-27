@@ -206,7 +206,7 @@ ncview <YYYYMMDDHH>.LDASOUT_DOMAIN1
 |----------|---------------|
 | `reference/designing-a-run.md` | Turn an underspecified user request into a scoped, runnable plan: the seven parameters every offline run needs, which to default vs. ask, domain cell-count sizing, spin-up strategy, the resolution-vs-forcing honesty check, and the plan-doc template |
 | `reference/getting-started.md` | Repos, submodule clone, libraries, `./configure`, `user_build_options`, `make`, what success looks like |
-| `reference/setup-tacc.md` | Interactive ls6 walkthrough: pre-flight, run `examples/test_tacc_deps.sh`, clone into `$WORK`, configure (option 3 — ifort serial), paste netCDF/Jasper stanza, `make`. Each phase has a STOP-ask-user checkpoint. Ends at a built `hrldas.exe`. |
+| `reference/setup-tacc.md` | AI-native ls6 onboarding: Claude opens an SSH session, uploads and executes `examples/test_tacc_deps.sh --clone`, auto-applies `module load` remediations on FAIL, patches `user_build_options` with the script's stanza, drives `./configure` and `make`. USER GATEs only at irreversible points (creds, allocation, configure choice, sign-off). Ends at a built `hrldas.exe`. |
 | `reference/architecture.md` | v5 modular layout, `noahmp_type` derived type, `kind_noahmp`, module list, v4.5 → v5 variable glossary |
 | `reference/running-single-point.md` | Bondville site, `bondville.dat` format, `create_point_data.exe`, namelist sections (paths, dates, physics options, timesteps), `ncview` |
 | `reference/running-2d-domain.md` | NLDAS-2 GRIB download, `extract_nldas.perl`, `create_forcing.exe`, `geo_em.d01_NLDAS0125.nc`, parallel submission |

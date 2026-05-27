@@ -6,10 +6,13 @@ simulation.
 
 ---
 
-> **On TACC Lonestar6?** Run `examples/test_tacc_deps.sh` first to verify
-> compilers, netCDF, Jasper, and Fortran/C linkage, then follow
-> `reference/setup-tacc.md` for the interactive ls6 walkthrough. Come back
-> here for the cross-platform background.
+> **On TACC Lonestar6?** Hand the whole onboarding to Claude:
+> `reference/setup-tacc.md` is an AI-native playbook where Claude opens
+> the SSH session, runs `examples/test_tacc_deps.sh --clone`, auto-fixes
+> missing modules, patches `user_build_options`, and drives `./configure`
+> + `make` end-to-end. You only gate the irreversible decisions
+> (credentials, allocation, configure choice, sign-off). Come back here
+> for the cross-platform background.
 
 ## Step 1: Understand the two repositories
 
