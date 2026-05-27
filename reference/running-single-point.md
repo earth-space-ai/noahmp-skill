@@ -171,6 +171,38 @@ Common output variables to sanity-check first:
 
 ---
 
+## Step 4a: Post-run checkpoint sweep (AI-native check)
+
+Before the LH figure comparison in Step 4b, run the structural checks
+that catch silent failures (zero-byte output, START_DATE mismatch, LH
+all zeros, missing custom variable, etc.):
+
+```bash
+bash examples/check_run_outputs.sh /path/to/run [--var BTRANXY]
+```
+
+The script reads `namelist.hrldas`, finds the LDASOUT files, and exits
+**0** iff all eight checks pass. On `[FAIL]`, it prints a one-line
+remediation hint — the agent should fix and re-run (or surface to the
+user if remediation needs human input).
+
+Checks performed:
+
+| # | Probe | Catches |
+|---|-------|---------|
+| 1 | `namelist.hrldas` present | Wrong run directory |
+| 2 | `INDIR`/`OUTDIR` resolve | Typo in namelist path |
+| 3 | `START_YEAR/MONTH/DAY` vs first forcing file | Date drift between namelist edits and forcing prep |
+| 4 | LDASOUT count + size > 10 KB | Model crashed early; header-only files |
+| 5 | LH not all-zero in first LDASOUT | `DYNAMIC_VEG_OPTION` mismatch |
+| 6 | (with `--var NAME`) custom variable in LDASOUT | `add_to_output` skipped in `custom-output.md` workflow |
+| 7 | `SPINUP_LOOPS` sane | Accidentally left at 50+ from a previous experiment |
+| 8 | `hrldas.exe` still executable | Permissions stripped by an scp / unzip |
+
+If all eight pass, proceed to Step 4b for the figure comparison.
+
+---
+
 ## Step 4b: Compare LH against the reference figure (AI-native check)
 
 This is the verification gate between Bondville and any larger run.
@@ -210,9 +242,10 @@ Bondville LH curve?" check.
 
    `examples/reference_outputs/bondville_LH_ncview.png`
 
-   Extracted from `KW-Mod-Tutorials/Noah-MP/Note1_Single_Point_Bondville-site.ipynb`
-   (the `ncview 199806200030.LDASOUT_DOMAIN1` step on the LH variable),
-   run author Koutian Wu. The match is **qualitative**: same y-range
+   Captured from the `ncview 199806200030.LDASOUT_DOMAIN1` step on the LH
+   variable, following the NCAR/hrldas tutorial
+   (https://github.com/NCAR/hrldas/blob/master/tutorial/Note1_Single_Point.ipynb).
+   The match is **qualitative**: same y-range
    (–100 to 500 W/m²), same diurnal shape (overnight ~0, sunrise ramp
    near timestep 22–24, mid-afternoon peak ~400 W/m² near timestep 35–37,
    evening taper). Pixel-perfect identity is not the bar; "would a
