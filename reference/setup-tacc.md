@@ -7,8 +7,9 @@ irreversible decision points (credentials, allocation, configure choice,
 final ship). End state is a built executable; running the model is covered
 by `running-single-point.md` and `running-2d-domain.md`.
 
-Source: distilled from KW-Mod-Tutorials `KW-PHS-Note0_Download_Compile.ipynb`
-(ls6 terminal transcripts). Stampede3 / Frontera variants are out of scope.
+Source: ls6 terminal transcripts captured while following the NCAR/hrldas
+tutorial (https://github.com/NCAR/hrldas/blob/master/tutorial/Note0_Download_Compile.ipynb)
+on Lonestar6. Stampede3 / Frontera variants are out of scope.
 
 ---
 

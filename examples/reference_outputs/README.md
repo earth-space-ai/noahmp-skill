@@ -5,7 +5,7 @@ AI-native run can be diffed against them.
 
 | File | What it is | Source |
 |------|-----------|--------|
-| `bondville_LH_ncview.png` | `ncview` LH (latent heat, W/m²) timeseries for one day at the Bondville site, single-point run, 48 × 30-min timesteps. Shows the canonical diurnal shape: ~0 W/m² overnight, ramp at sunrise, ~420 W/m² peak in mid-afternoon UTC, taper to evening. | Extracted from `KW-Mod-Tutorials/Noah-MP/Note1_Single_Point_Bondville-site.ipynb` cell 5, attachment `image-11.png`. Originally produced by `ncview 199806200030.LDASOUT_DOMAIN1` on the LH variable. Run author: Koutian Wu. |
+| `bondville_LH_ncview.png` | `ncview` LH (latent heat, W/m²) timeseries for one day at the Bondville site, single-point run, 48 × 30-min timesteps. Shows the canonical diurnal shape: ~0 W/m² overnight, ramp at sunrise, ~420 W/m² peak in mid-afternoon UTC, taper to evening. | Captured by running the NCAR/hrldas tutorial (https://github.com/NCAR/hrldas/blob/master/tutorial/Note1_Single_Point.ipynb) through to its `ncview 199806200030.LDASOUT_DOMAIN1` step on the LH variable. |
 
 ## How AI-native runs are compared to these
 

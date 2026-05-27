@@ -39,11 +39,12 @@ tags:
 >
 > **Acknowledgment:** the procedural content in this skill is borrowed and
 > learned from the Noah-MP tutorial notebooks written by Cenlin He
-> (`Note1_Single_Point_Bondville-site`, `Note2_2D_NLDAS2_domain`,
+> (`Note1_Single_Point`, `Note2_2D_NLDAS2_domain`,
 > `Note3_Output_Additional_Variables`, `Note4_Code_Development_GitHub_Pull_Request`),
-> distributed at https://github.com/NCAR/hrldas/tree/master/hrldas/docs and in
-> the `KW-Mod-Tutorials/Noah-MP` notebook set. This skill restructures that
-> material for agent use; the underlying instruction is Cenlin's.
+> published at https://github.com/NCAR/hrldas/tree/master/tutorial. This
+> skill restructures that material for agent use; the underlying
+> instruction is Cenlin's. **The NCAR tutorials are the authoritative
+> source — when this skill disagrees with them, they win.**
 
 **What Noah-MP does:** Solves coupled land-surface energy, water, and carbon
 budgets at a column (single point) or over a grid (2D domain). Provides
@@ -220,5 +221,6 @@ ncview <YYYYMMDDHH>.LDASOUT_DOMAIN1
 |------|---------------|
 | `examples/PLAN_Texas_12p5km_NLDAS2_TACC.md` | A complete worked plan produced by `reference/designing-a-run.md` for the request "soil moisture/temp + LH, 3/6-hourly, any year, Texas, 12.5 km, on TACC" (matched-resolution case: grid = forcing, so no downscaling caveat) |
 | `examples/test_tacc_deps.sh` | Dep test for ls6. Build-chain probes (host, compilers, netCDF /opt/apps classifier, Jasper, NCAR Fortran/C tarball, summary with ready-to-paste `user_build_options` stanza) always run. Opt-in flags: `--clone` clones NCAR/hrldas into `$WORK` if all probes pass; `--forcing` probes the NLDAS-2 toolchain (`wgrib`, `perl`, `~/.netrc` for NASA Earthdata, `NLDAS_ELEVATION.grb`). Exit 0 iff all requested probes pass. Companion to `reference/setup-tacc.md`. |
+| `examples/check_run_outputs.sh` | Post-run structural sweep for any Noah-MP/HRLDAS run (single-point or 2D). Eight probes: namelist present, INDIR/OUTDIR resolve, START_DATE vs first forcing file, LDASOUT count + size > 10 KB, LH not all-zero, custom variable present (with `--var NAME`), SPINUP_LOOPS sane, hrldas.exe still executable. Used by `running-single-point.md` Step 4a. Exit 0 iff all pass. |
 | `examples/plot_ldasout_lh.py` | Headless matplotlib plotter for one day of LH from `*.LDASOUT_DOMAIN1`. Used by the AI-native Bondville verification step (`running-single-point.md` Step 4b) to produce a PNG comparable to `examples/reference_outputs/bondville_LH_ncview.png`. Exits 2 with a stderr warning if the LH timeseries is flat (the `DYNAMIC_VEG_OPTION` mismatch bug). |
-| `examples/reference_outputs/bondville_LH_ncview.png` | Canonical LH `ncview` screenshot for the Bondville single-point run, 48 × 30-min timesteps, 1998-06-20. Extracted from `KW-Mod-Tutorials/Noah-MP/Note1_Single_Point_Bondville-site.ipynb`. The "did the AI reproduce Koutian's run" eyeball reference. |
+| `examples/reference_outputs/bondville_LH_ncview.png` | Canonical LH `ncview` screenshot for the Bondville single-point run, 48 × 30-min timesteps, 1998-06-20. The "did the AI reproduce the canonical run?" eyeball reference. |

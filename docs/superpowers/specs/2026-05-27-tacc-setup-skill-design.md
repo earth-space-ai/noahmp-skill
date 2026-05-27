@@ -10,8 +10,9 @@ build; running the model is covered by the existing
 
 ## Source
 
-Distilled from `KW-Mod-Tutorials/Noah-MP/KW-PHS-Note0_Download_Compile.ipynb`
-(terminal transcripts from ls6 sessions). Specifically:
+Captured while following the NCAR/hrldas tutorial
+(https://github.com/NCAR/hrldas/blob/master/tutorial/Note0_Download_Compile.ipynb)
+on TACC Lonestar6. Specifically the steps that diverge on ls6:
 
 - cell 14 — `which ifort/gfortran/pgfortran` probes
 - cell 16 — rationale for picking `./configure` option 3 (ifort serial) on ls6

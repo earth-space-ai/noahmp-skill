@@ -38,7 +38,8 @@
 # With --clone: also creates $WORK/hrldas (~250 MB after submodule init).
 # Never writes to ~/.netrc, ~/.bashrc, or any module state.
 #
-# Source: distilled from KW-PHS-Note0_Download_Compile.ipynb (cells 14, 16, 36, 51, 55)
+# Source: captured while following the NCAR/hrldas tutorial on Lonestar6
+# (https://github.com/NCAR/hrldas/blob/master/tutorial/Note0_Download_Compile.ipynb)
 # and reference/running-2d-domain.md.
 # Companion playbook: reference/setup-tacc.md
 

@@ -13,7 +13,7 @@ This guide covers two examples:
    must first be promoted to the derived type before it can be output.
 
 Tutorial source (borrowed and learned from Cenlin He's Noah-MP tutorial):
-`KW-Mod-Tutorials/Noah-MP/Note3_Output_Additional_Variables.ipynb`
+https://github.com/NCAR/hrldas/blob/master/tutorial/Note3_Output_Additional_Variables.ipynb
 
 ---
 
