@@ -6,6 +6,11 @@ simulation.
 
 ---
 
+> **On TACC Lonestar6?** Run `examples/test_tacc_deps.sh` first to verify
+> compilers, netCDF, Jasper, and Fortran/C linkage, then follow
+> `reference/setup-tacc.md` for the interactive ls6 walkthrough. Come back
+> here for the cross-platform background.
+
 ## Step 1: Understand the two repositories
 
 Noah-MP physics lives in **`NCAR/noahmp`**. To run it offline (without WRF /
