@@ -206,6 +206,7 @@ ncview <YYYYMMDDHH>.LDASOUT_DOMAIN1
 |----------|---------------|
 | `reference/designing-a-run.md` | Turn an underspecified user request into a scoped, runnable plan: the seven parameters every offline run needs, which to default vs. ask, domain cell-count sizing, spin-up strategy, the resolution-vs-forcing honesty check, and the plan-doc template |
 | `reference/getting-started.md` | Repos, submodule clone, libraries, `./configure`, `user_build_options`, `make`, what success looks like |
+| `reference/setup-tacc.md` | Interactive ls6 walkthrough: pre-flight, run `examples/test_tacc_deps.sh`, clone into `$WORK`, configure (option 3 — ifort serial), paste netCDF/Jasper stanza, `make`. Each phase has a STOP-ask-user checkpoint. Ends at a built `hrldas.exe`. |
 | `reference/architecture.md` | v5 modular layout, `noahmp_type` derived type, `kind_noahmp`, module list, v4.5 → v5 variable glossary |
 | `reference/running-single-point.md` | Bondville site, `bondville.dat` format, `create_point_data.exe`, namelist sections (paths, dates, physics options, timesteps), `ncview` |
 | `reference/running-2d-domain.md` | NLDAS-2 GRIB download, `extract_nldas.perl`, `create_forcing.exe`, `geo_em.d01_NLDAS0125.nc`, parallel submission |
@@ -218,3 +219,4 @@ ncview <YYYYMMDDHH>.LDASOUT_DOMAIN1
 | File | What it shows |
 |------|---------------|
 | `examples/PLAN_Texas_12p5km_NLDAS2_TACC.md` | A complete worked plan produced by `reference/designing-a-run.md` for the request "soil moisture/temp + LH, 3/6-hourly, any year, Texas, 12.5 km, on TACC" (matched-resolution case: grid = forcing, so no downscaling caveat) |
+| `examples/test_tacc_deps.sh` | Six-probe dep test for ls6: host, compilers, netCDF (`/opt/apps` classifier: known-good vs broken), Jasper, NCAR Fortran/C tarball, summary with ready-to-paste `user_build_options` stanza. Exit 0 iff all probes pass. Companion to `reference/setup-tacc.md`. |
