@@ -1,5 +1,75 @@
 # Noah-MP Skill
 
+> **⚠ Don't read this skill as a human.** It is written for AI coding agents
+> (Claude Code, Codex, Cursor, Aider, Cline, or any agent that can read files
+> and run shell). Open it through an agent and let the agent drive — paths,
+> module loads, configure keystrokes, build-failure remediation, and the
+> dependency test are all designed to be executed by the agent, not typed by
+> you. The doc-map and phase blocks are machine-checkable, not tutorial prose.
+>
+> **Starting prompt — paste into your agent of choice:**
+>
+> ```
+> Read SKILL.md in this repo, then drive the Noah-MP / HRLDAS workflow that
+> matches my request below. Treat the skill as authoritative: follow its
+> doc-map to load the right reference/*.md, honor the USER GATE markers
+> (ask me only at those points), and use examples/test_tacc_deps.sh and the
+> AI-native playbook in reference/setup-tacc.md when the target is TACC ls6.
+>
+> When you invoke examples/test_tacc_deps.sh, pick the flags from my request:
+>   --clone           if I'm starting from a fresh ls6 login (almost always)
+>   --clone --forcing if my request mentions NLDAS-2, 2D, CONUS, or any
+>                     regional/state-scale domain (Texas, California, etc.)
+>
+> After ANY model run (single-point or 2D), call examples/check_run_outputs.sh
+> on the run directory before treating the run as valid — it catches silent
+> failures (header-only LDASOUT, START_DATE drift, all-zero LH, missing
+> custom variable, etc.). Don't move on to analysis until it exits 0.
+>
+> If my request involves a Bondville single-point run, after check_run_outputs.sh
+> passes, also run examples/plot_ldasout_lh.py to produce bondville_LH.png
+> and surface it alongside examples/reference_outputs/bondville_LH_ncview.png
+> for me to eyeball-compare.
+>
+> If the task is anything outside what's in this skill (ERA5-Land forcing,
+> UFS coupling, anything not covered here), defer to the gold-standard NCAR
+> tutorials linked above — they are the source of truth.
+>
+> My request: <one sentence — e.g. "set up Noah-MP on TACC ls6 from a fresh
+> login through a built hrldas.exe", or "plan a Texas 12.5 km NLDAS-2 run",
+> or "add BTRANXY to LDASOUT">.
+> ```
+
+## Gold-standard reference
+
+The authoritative human tutorials for Noah-MP/HRLDAS live at
+**[NCAR/hrldas/tutorial](https://github.com/NCAR/hrldas/tree/master/tutorial)**:
+
+| Notebook | Topic |
+|----------|-------|
+| [Note0_Download_Compile.ipynb](https://github.com/NCAR/hrldas/blob/master/tutorial/Note0_Download_Compile.ipynb) | Clone, configure, build |
+| [Note1_Single_Point.ipynb](https://github.com/NCAR/hrldas/blob/master/tutorial/Note1_Single_Point.ipynb) | Bondville single-point run (the canonical first run) |
+| [Note2_2D_NLDAS2_domain.ipynb](https://github.com/NCAR/hrldas/blob/master/tutorial/Note2_2D_NLDAS2_domain.ipynb) | CONUS 2D run with NLDAS-2 forcing |
+| [Note3_Output_Additional_Variables.ipynb](https://github.com/NCAR/hrldas/blob/master/tutorial/Note3_Output_Additional_Variables.ipynb) | Add a new variable to LDASOUT |
+| [Note4_Code_Development_GitHub_Pull_Request.ipynb](https://github.com/NCAR/hrldas/blob/master/tutorial/Note4_Code_Development_GitHub_Pull_Request.ipynb) | Contribute upstream |
+| [Note5_Regional_modeling_ERA5-Land_forcing.ipynb](https://github.com/NCAR/hrldas/blob/master/tutorial/Note5_Regional_modeling_ERA5-Land_forcing.ipynb) | ERA5-Land forcing for regional runs |
+| [Note6_AMS2024_NoahMP_short_course.ipynb](https://github.com/NCAR/hrldas/blob/master/tutorial/Note6_AMS2024_NoahMP_short_course.ipynb) | AMS 2024 short course |
+| [Note7_AMS24_Tutorial_UFS_NoahMP_component.ipynb](https://github.com/NCAR/hrldas/blob/master/tutorial/Note7_AMS24_Tutorial_UFS_NoahMP_component.ipynb) | UFS coupled component |
+
+**This skill is not a replacement for those notebooks** — it is a
+machine-readable, agent-executable wrapper around the same procedure.
+When a checkpoint, namelist value, or physics option in this skill
+disagrees with the NCAR tutorials, **the NCAR tutorials win.** File an
+issue here and we'll update.
+
+The skill adds: AI-native execution (the agent runs commands and parses
+output, you don't), TACC ls6-specific dependency probes and remediation,
+post-run verification checkpoints, and a reference LH figure for the
+Bondville run so the agent's output can be visually validated against a
+known-good result.
+
+---
+
 A progressive-disclosure skill for the [Noah-MP](https://github.com/NCAR/noahmp)
 land surface model and its [HRLDAS](https://github.com/NCAR/hrldas) offline
 driver.
@@ -18,9 +88,10 @@ driver.
 
 ## What This Is
 
-A self-contained knowledge package that teaches AI agents (and humans) how to
+A self-contained knowledge package that teaches AI coding agents how to
 **install, compile, run, modify, debug, and contribute to** Noah-MP, covering
 the standard refactored Version 5 codebase and the HRLDAS offline driver.
+Humans read the disclaimer and the agent's output — the agent reads the rest.
 
 The skill captures the **procedural knowledge** that is normally only
 transmitted by working alongside an experienced Noah-MP developer: the order
@@ -52,15 +123,18 @@ add a new output variable.
 - Noah-MP v5 tech note: He et al. 2023, doi:10.5065/ew8g-yr95
 - NCAR/noahmp repository: https://github.com/NCAR/noahmp
 - NCAR/hrldas repository: https://github.com/NCAR/hrldas
-- KW-Mod-Tutorials/Noah-MP notebooks (Cenlin He's tutorials): https://github.com/ktwu01/KW-Mod-Tutorials
+
+- **NCAR/hrldas tutorial notebooks** (the authoritative human tutorials, see "Gold-standard reference" section above): https://github.com/NCAR/hrldas/tree/master/tutorial
+- NCAR RAL Noah-MP tutorial short course at AMS 2024 (slides): https://ral.ucar.edu/events/2024/ams-2024-short-course-noah-mp-land-surface-model-tutorial
+- NCAR RAL Noah-MP tutorial event agenda (slides): https://ral.ucar.edu/events/5249/agenda
 
 This skill is borrowed and learned from the Noah-MP tutorial notebooks
 written by **Cenlin He** (NCAR/RAL, Noah-MP maintainer): the single-point,
-2D NLDAS, custom-output, and pull-request notebooks distributed in
-`KW-Mod-Tutorials/Noah-MP` (`Note1` through `Note4`). The procedural
-knowledge (`bondville.dat` format, `create_forcing.exe` pipeline,
-`BTRANXY` end-to-end IO chain, the submodule-first push order) is Cenlin's;
-this skill restructures it for agent use.
+2D NLDAS, custom-output, and pull-request notebooks at
+https://github.com/NCAR/hrldas/tree/master/tutorial (`Note1` through `Note4`).
+The procedural knowledge (`bondville.dat` format, `create_forcing.exe`
+pipeline, `BTRANXY` end-to-end IO chain, the submodule-first push order) is
+Cenlin's; this skill restructures it for agent use.
 
 Additional credits:
 

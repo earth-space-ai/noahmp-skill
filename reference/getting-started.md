@@ -6,6 +6,14 @@ simulation.
 
 ---
 
+> **On TACC Lonestar6?** Hand the whole onboarding to Claude:
+> `reference/setup-tacc.md` is an AI-native playbook where Claude opens
+> the SSH session, runs `examples/test_tacc_deps.sh --clone`, auto-fixes
+> missing modules, patches `user_build_options`, and drives `./configure`
+> + `make` end-to-end. You only gate the irreversible decisions
+> (credentials, allocation, configure choice, sign-off). Come back here
+> for the cross-platform background.
+
 ## Step 1: Understand the two repositories
 
 Noah-MP physics lives in **`NCAR/noahmp`**. To run it offline (without WRF /

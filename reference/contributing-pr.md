@@ -6,7 +6,7 @@ Code Review Committee. This guide walks through the standard contribution
 flow.
 
 Tutorial source (borrowed and learned from Cenlin He's Noah-MP tutorial):
-`KW-Mod-Tutorials/Noah-MP/Note4_Code_Development_GitHub_Pull_Request.ipynb`
+https://github.com/NCAR/hrldas/blob/master/tutorial/Note4_Code_Development_GitHub_Pull_Request.ipynb
 GitHub guide:
 https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-a-pull-request
 
