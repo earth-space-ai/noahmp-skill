@@ -21,6 +21,12 @@
 >   --clone --forcing if my request mentions NLDAS-2, 2D, CONUS, or any
 >                     regional/state-scale domain (Texas, California, etc.)
 >
+> If my request involves a Bondville single-point run, after the model finishes
+> run examples/plot_ldasout_lh.py to produce bondville_LH.png and surface it
+> alongside examples/reference_outputs/bondville_LH_ncview.png for me to
+> eyeball-compare. Flag a flat LH curve loudly — that's the
+> DYNAMIC_VEG_OPTION mismatch bug.
+>
 > My request: <one sentence — e.g. "set up Noah-MP on TACC ls6 from a fresh
 > login through a built hrldas.exe", or "plan a Texas 12.5 km NLDAS-2 run",
 > or "add BTRANXY to LDASOUT">.
