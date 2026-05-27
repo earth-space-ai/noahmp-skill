@@ -219,4 +219,4 @@ ncview <YYYYMMDDHH>.LDASOUT_DOMAIN1
 | File | What it shows |
 |------|---------------|
 | `examples/PLAN_Texas_12p5km_NLDAS2_TACC.md` | A complete worked plan produced by `reference/designing-a-run.md` for the request "soil moisture/temp + LH, 3/6-hourly, any year, Texas, 12.5 km, on TACC" (matched-resolution case: grid = forcing, so no downscaling caveat) |
-| `examples/test_tacc_deps.sh` | Six-probe dep test for ls6: host, compilers, netCDF (`/opt/apps` classifier: known-good vs broken), Jasper, NCAR Fortran/C tarball, summary with ready-to-paste `user_build_options` stanza. Exit 0 iff all probes pass. Companion to `reference/setup-tacc.md`. |
+| `examples/test_tacc_deps.sh` | Dep test for ls6. Build-chain probes (host, compilers, netCDF /opt/apps classifier, Jasper, NCAR Fortran/C tarball, summary with ready-to-paste `user_build_options` stanza) always run. Opt-in flags: `--clone` clones NCAR/hrldas into `$WORK` if all probes pass; `--forcing` probes the NLDAS-2 toolchain (`wgrib`, `perl`, `~/.netrc` for NASA Earthdata, `NLDAS_ELEVATION.grb`). Exit 0 iff all requested probes pass. Companion to `reference/setup-tacc.md`. |

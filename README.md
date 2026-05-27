@@ -16,6 +16,11 @@
 > (ask me only at those points), and use examples/test_tacc_deps.sh and the
 > AI-native playbook in reference/setup-tacc.md when the target is TACC ls6.
 >
+> When you invoke examples/test_tacc_deps.sh, pick the flags from my request:
+>   --clone           if I'm starting from a fresh ls6 login (almost always)
+>   --clone --forcing if my request mentions NLDAS-2, 2D, CONUS, or any
+>                     regional/state-scale domain (Texas, California, etc.)
+>
 > My request: <one sentence — e.g. "set up Noah-MP on TACC ls6 from a fresh
 > login through a built hrldas.exe", or "plan a Texas 12.5 km NLDAS-2 run",
 > or "add BTRANXY to LDASOUT">.

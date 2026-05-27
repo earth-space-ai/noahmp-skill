@@ -1,12 +1,15 @@
 #!/usr/bin/env bash
-# test_tacc_deps.sh — verify Noah-MP / HRLDAS build dependencies on TACC Lonestar6.
+# test_tacc_deps.sh — verify Noah-MP / HRLDAS build (and optional forcing)
+# dependencies on TACC Lonestar6.
 #
 # Usage
-#   bash test_tacc_deps.sh            # just probe deps (no clone)
-#   bash test_tacc_deps.sh --clone    # probe deps; if all PASS, also clone hrldas into $WORK
+#   bash test_tacc_deps.sh                     # build-chain probes only
+#   bash test_tacc_deps.sh --clone             # also clone hrldas into $WORK if all probes PASS
+#   bash test_tacc_deps.sh --forcing           # also probe NLDAS-2 forcing toolchain
+#   bash test_tacc_deps.sh --clone --forcing   # everything (recommended for 2D-domain workflows)
 #
 # What it does
-#   Six probes, each prints [PASS] / [WARN] / [FAIL] with a one-line hint.
+#   Build-chain probes (always run; PASS/[WARN]/[FAIL]):
 #     1. Host check          — confirm ls6.tacc.utexas.edu
 #     2. Compiler probe      — locate ifort, gfortran, gcc, cpp (pgfortran is unavailable on ls6)
 #     3. netCDF probe        — find netcdf.inc; flag known-good vs broken builds under /opt/apps
@@ -14,28 +17,41 @@
 #     5. Fortran/C dep tests — download the NCAR WRF tarball; build and run TEST_1..4 + csh/perl/sh
 #     6. Summary             — print recommended ./configure option and a ready-to-paste
 #                              user_build_options stanza
-#   Then, only with --clone and only if all probes pass:
+#
+#   With --forcing (additional probes; only relevant for 2D / NLDAS-2 workflows):
+#     F1. wgrib              — required by create_forcing.exe to read NLDAS GRIB
+#     F2. perl + modules     — extract_nldas.perl needs perl plus a few standard modules
+#     F3. .netrc Earthdata   — NASA GES DISC won't serve NLDAS-2 without urs.earthdata.nasa.gov auth
+#     F4. NLDAS_ELEVATION    — sanity-check for the bundled elevation grid under $WORK/hrldas
+#                              (only if --clone has run or $WORK/hrldas already exists)
+#
+#   With --clone (only if all probes PASS):
 #     7. Clone source        — git clone --recurse-submodules https://github.com/NCAR/hrldas
 #                              into $WORK (skipped if $WORK/hrldas already exists)
 #
-# Exit 0 only if all six probes pass (and the clone, if requested, succeeded).
-# The script does not run `module load`; it reports what is missing and lets
-# the user load modules themselves.
+# Exit 0 only if all probes pass (build-chain plus any opt-in groups requested),
+# and the clone, if requested, succeeded. The script does not run `module load`;
+# it reports what is missing and lets the user (or driving agent) load modules
+# themselves.
 #
 # Side effects: creates ~/test_noahmp_deps/ and downloads ~150 KB into it.
 # With --clone: also creates $WORK/hrldas (~250 MB after submodule init).
+# Never writes to ~/.netrc, ~/.bashrc, or any module state.
 #
-# Source: distilled from KW-PHS-Note0_Download_Compile.ipynb (cells 14, 16, 36, 51, 55).
+# Source: distilled from KW-PHS-Note0_Download_Compile.ipynb (cells 14, 16, 36, 51, 55)
+# and reference/running-2d-domain.md.
 # Companion playbook: reference/setup-tacc.md
 
 set -u
 
 DO_CLONE=0
+DO_FORCING=0
 for arg in "$@"; do
   case "$arg" in
-    --clone) DO_CLONE=1 ;;
+    --clone)   DO_CLONE=1 ;;
+    --forcing) DO_FORCING=1 ;;
     -h|--help)
-      sed -n '2,30p' "$0" | sed 's/^# \{0,1\}//'
+      sed -n '2,45p' "$0" | sed 's/^# \{0,1\}//'
       exit 0
       ;;
     *) echo "unknown option: $arg" >&2; exit 2 ;;
@@ -252,6 +268,91 @@ else
   fi
 fi
 
+# ---- F. Forcing toolchain (opt-in via --forcing) ----------------------------
+# Only relevant for 2D/NLDAS-2 workflows (reference/running-2d-domain.md).
+# Single-point users (running-single-point.md) can skip this entirely — they
+# use bondville.dat + create_point_data.exe, neither of which needs wgrib,
+# extract_nldas.perl, or NASA Earthdata.
+if (( DO_FORCING == 1 )); then
+  hdr "F. NLDAS-2 forcing toolchain"
+
+  # F1. wgrib — required by extract_nldas.perl and create_forcing.exe
+  if path="$(command -v wgrib 2>/dev/null)"; then
+    pass "wgrib → $path"
+  elif path="$(command -v wgrib2 2>/dev/null)"; then
+    warn "wgrib not found, but wgrib2 is available at $path"
+    note "extract_nldas.perl uses classic 'wgrib' syntax; wgrib2 is not a drop-in."
+    note "remediate: module load wgrib  (or build wgrib from source)"
+  else
+    fail "wgrib not in PATH"
+    note "remediate: module load wgrib  (NLDAS-2 GRIB cannot be read without it)"
+  fi
+
+  # F2. perl + the few modules extract_nldas.perl pulls in
+  if path="$(command -v perl 2>/dev/null)"; then
+    pass "perl → $path ($(perl -e 'print $^V' 2>/dev/null))"
+    missing_mods=""
+    for m in strict warnings File::Path File::Copy; do
+      perl -M"$m" -e1 >/dev/null 2>&1 || missing_mods="$missing_mods $m"
+    done
+    if [[ -n "$missing_mods" ]]; then
+      warn "perl modules missing:$missing_mods"
+      note "remediate: cpanm$missing_mods  (or rely on the system perl, usually fine on ls6)"
+    else
+      note "core perl modules (strict, warnings, File::Path, File::Copy) all importable"
+    fi
+  else
+    fail "perl not in PATH (extract_nldas.perl cannot run)"
+  fi
+
+  # F3. NASA Earthdata .netrc — required to download NLDAS-2 from GES DISC.
+  # We only check presence + the urs.earthdata.nasa.gov line; we never read
+  # or print credentials.
+  if [[ ! -f "$HOME/.netrc" ]]; then
+    warn "~/.netrc not found"
+    note "remediate: register at https://urs.earthdata.nasa.gov, then add to ~/.netrc:"
+    note "  machine urs.earthdata.nasa.gov login YOUR_USERNAME password YOUR_PASSWORD"
+    note "  chmod 600 ~/.netrc"
+  else
+    perms="$(stat -c '%a' "$HOME/.netrc" 2>/dev/null || stat -f '%Lp' "$HOME/.netrc" 2>/dev/null)"
+    if [[ "$perms" != "600" && "$perms" != "400" ]]; then
+      warn "~/.netrc exists but permissions are $perms (must be 600 or wget/curl will refuse to use it)"
+      note "remediate: chmod 600 ~/.netrc"
+    fi
+    if grep -q "urs.earthdata.nasa.gov" "$HOME/.netrc"; then
+      pass "~/.netrc has urs.earthdata.nasa.gov entry (perms=$perms)"
+    else
+      warn "~/.netrc exists but no urs.earthdata.nasa.gov machine entry"
+      note "remediate: add 'machine urs.earthdata.nasa.gov login USER password PASS' (chmod 600)"
+    fi
+  fi
+
+  # F4. NLDAS_ELEVATION grid — bundled with hrldas. Only check if the source
+  # tree is present (either via --clone earlier, or pre-existing).
+  if [[ -n "${WORK:-}" && -d "${WORK}/hrldas" ]]; then
+    elev_dir="${WORK}/hrldas/HRLDAS_forcing/run/examples/NLDAS"
+    if [[ -f "$elev_dir/NLDAS_ELEVATION.grb" ]]; then
+      pass "NLDAS_ELEVATION.grb already uncompressed at $elev_dir"
+    elif [[ -f "$elev_dir/NLDAS_ELEVATION.grb.gz" ]]; then
+      warn "NLDAS_ELEVATION.grb.gz present but not uncompressed"
+      note "remediate: gzip -d $elev_dir/NLDAS_ELEVATION.grb.gz"
+    else
+      warn "no NLDAS_ELEVATION.grb[.gz] under $elev_dir"
+      note "hrldas tree may be on a different release that ships it elsewhere; verify manually"
+    fi
+  else
+    note "skipping NLDAS_ELEVATION check — \$WORK/hrldas not present yet (run with --clone first)"
+  fi
+
+  # F5. Reminder about what the user still needs to provide (not auto-checkable).
+  note ""
+  note "Not auto-checked (out of scope for a deps probe):"
+  note "  - geo_em.d01_*.nc for your domain (WPS output, or tutorial's geo_em.d01_NLDAS0125.nc)"
+  note "  - raw NLDAS-2 GRIB files in NLDAS_forcing/raw/ (download with NASA Earthdata creds)"
+  note "  - extract_nldas.perl edits: \$data_dir, \$results_dir, year/day range"
+  note "  See reference/running-2d-domain.md for the full procedure."
+fi
+
 # ---- 6. Summary -------------------------------------------------------------
 hdr "6. Summary and recommended user_build_options"
 if (( FAILED == 0 )); then
@@ -314,6 +415,12 @@ if (( FAILED == 0 )); then
   else
     echo "  Next: open reference/setup-tacc.md and continue from Phase 2 (clone the repo),"
     echo "        or re-run this script with --clone to clone NCAR/hrldas into \$WORK now."
+  fi
+  if (( DO_FORCING == 1 )); then
+    echo
+    echo "  Forcing toolchain probed (--forcing). For the full NLDAS-2 pipeline"
+    echo "  (download, extract_nldas.perl, create_forcing.exe, namelist patching)"
+    echo "  see reference/running-2d-domain.md."
   fi
   exit 0
 else

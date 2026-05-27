@@ -88,9 +88,25 @@ on ls6 (`scp` over the same multiplex socket, or `cat | ssh ... 'cat >
 
 ```bash
 chmod +x ~/test_tacc_deps.sh
+
+# Build-chain only:
 bash ~/test_tacc_deps.sh --clone
 echo "__EXIT__=$?"
+
+# OR, when the user's request involves NLDAS-2 / 2D-domain forcing
+# (e.g. examples/PLAN_Texas_12p5km_NLDAS2_TACC.md), also probe the forcing
+# toolchain in the same pass:
+bash ~/test_tacc_deps.sh --clone --forcing
+echo "__EXIT__=$?"
 ```
+
+**Claude picks the flag set from the user's stated goal in Phase 0:**
+
+| User goal | Flags Claude uses |
+|-----------|-------------------|
+| "Just build hrldas.exe", "single-point Bondville run" | `--clone` |
+| Anything mentioning NLDAS-2, 2D domain, CONUS, a state-scale region | `--clone --forcing` |
+| Unclear | Ask the user once at the Phase 0 gate. Default to `--clone --forcing` if they handwave — the extra probes are cheap and don't write anything. |
 
 **`success_check`:**
 - `__EXIT__=0`
@@ -115,6 +131,11 @@ echo "__EXIT__=$?"
 | `TEST_4: link failed (Fortran↔C ABI mismatch)` | `module purge && module load intel netcdf` |
 | `download failed` | `module load wget` if missing, else surface (likely compute-node misroute) |
 | `$WORK is unset` in Phase 7 of the script | Already handled in Phase 0; should not reach here |
+| **Forcing-block (only when `--forcing` was set):** | |
+| `wgrib not in PATH` | `module load wgrib` (or `module load grads` on some ls6 versions which bundles it) |
+| `~/.netrc not found` or `no urs.earthdata.nasa.gov machine entry` | **USER GATE** — Claude cannot fabricate credentials. Ask the user to register at `https://urs.earthdata.nasa.gov` and create the `.netrc` entry, then proceed |
+| `NLDAS_ELEVATION.grb.gz present but not uncompressed` | `gzip -d $WORK/hrldas/HRLDAS_forcing/run/examples/NLDAS/NLDAS_ELEVATION.grb.gz` (idempotent, safe to auto-run) |
+| `perl modules missing: …` | Try the system perl first by re-running; on ls6 the listed modules are always available. If still failing, `cpanm <module>` per the hint. |
 
 If three remediation cycles do not yield exit 0, **surface to user** with
 the full script output and ask whether to continue manually.
@@ -246,11 +267,17 @@ Then asks:
 > run, or jump to the Texas 12.5 km plan?"
 
 The next-step options route to:
-- `reference/running-single-point.md`
-- `reference/designing-a-run.md` → `reference/running-2d-domain.md` →
-  `examples/PLAN_Texas_12p5km_NLDAS2_TACC.md` (planning checklist, then
-  execution, then a worked example on this exact cluster)
-- `reference/getting-started.md` Step 7 for the bare banner check
+- **Single-point (Bondville-style):** `reference/running-single-point.md`.
+  Forcing here is `bondville.dat` + `create_point_data.exe`; no NLDAS-2 or
+  Earthdata involved. If the user picked this branch but Phase 1 ran with
+  `--forcing`, the NLDAS-2 probes were wasted but harmless.
+- **2D / NLDAS-2:** `reference/designing-a-run.md` → `reference/running-2d-domain.md`
+  → `examples/PLAN_Texas_12p5km_NLDAS2_TACC.md`. Confirm the `--forcing`
+  probes all passed (especially `~/.netrc` + `wgrib`) before the user
+  starts the GES DISC download — a 3-day window is ~30 MB but a multi-year
+  run is hundreds of GB.
+- **Just-confirm-it-builds:** `reference/getting-started.md` Step 7 for the
+  bare banner check.
 
 Remind once: any non-trivial run requires `idev -p development -t 02:00:00`
 or sbatch — not the login node Claude is on.
