@@ -53,6 +53,8 @@ add a new output variable.
 - NCAR/noahmp repository: https://github.com/NCAR/noahmp
 - NCAR/hrldas repository: https://github.com/NCAR/hrldas
 - KW-Mod-Tutorials/Noah-MP notebooks (Cenlin He's tutorials): https://github.com/ktwu01/KW-Mod-Tutorials
+- NCAR RAL Noah-MP tutorial short course at AMS 2024 (slides): https://ral.ucar.edu/events/2024/ams-2024-short-course-noah-mp-land-surface-model-tutorial
+- NCAR RAL Noah-MP tutorial event agenda (slides): https://ral.ucar.edu/events/5249/agenda
 
 This skill is borrowed and learned from the Noah-MP tutorial notebooks
 written by **Cenlin He** (NCAR/RAL, Noah-MP maintainer): the single-point,
